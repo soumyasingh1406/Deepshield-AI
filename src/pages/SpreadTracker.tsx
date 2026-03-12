@@ -1,4 +1,6 @@
 import { BarChart3 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,7 +21,7 @@ ChartJS.register(
   Legend
 );
 
-const spreadData = [
+const initialSpreadData = [
   { platform: 'Instagram', value: 40, color: '#f59e0b' },
   { platform: 'Telegram', value: 25, color: '#00f0ff' },
   { platform: 'Twitter/X', value: 18, color: '#0066ff' },
@@ -27,85 +29,107 @@ const spreadData = [
   { platform: 'Messaging Apps', value: 7, color: '#00ff9d' }
 ];
 
-const chartData = {
-  labels: spreadData.map(d => d.platform),
-  datasets: [
-    {
-      label: 'Spread',
-      data: spreadData.map(d => d.value),
-      backgroundColor: spreadData.map(d => d.color),
-      borderRadius: 4,
-      barPercentage: 0.6,
-      categoryPercentage: 0.8,
-    }
-  ]
-};
+export default function SpreadTracker() {
+  const [spreadData, setSpreadData] = useState(initialSpreadData);
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: false,
-    },
-    tooltip: {
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      titleColor: '#fff',
-      bodyColor: '#00f0ff',
-      borderColor: 'rgba(0, 240, 255, 0.3)',
-      borderWidth: 1,
-      padding: 10,
-      bodyFont: {
-        family: 'monospace'
-      },
-      titleFont: {
-        family: 'monospace'
-      },
-      callbacks: {
-        label: function(context: any) {
-          return `${context.raw}% Spread`;
-        }
+  useEffect(() => {
+    const socket = io("http://localhost:5000");
+
+    socket.on("spreadUpdate", (data: Record<string, number>) => {
+      setSpreadData(prev => prev.map(item => ({
+        ...item,
+        value: data[item.platform] !== undefined ? Math.round(data[item.platform]) : item.value
+      })));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  const chartData = {
+    labels: spreadData.map(d => d.platform),
+    datasets: [
+      {
+        label: 'Spread',
+        data: spreadData.map(d => d.value),
+        backgroundColor: spreadData.map(d => d.color),
+        borderRadius: 4,
+        barPercentage: 0.6,
+        categoryPercentage: 0.8,
       }
-    }
-  },
-  scales: {
-    y: {
-      beginAtZero: true,
-      grid: {
-        color: 'rgba(0, 240, 255, 0.1)',
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 800,
+      easing: 'easeOutQuart'
+    },
+    plugins: {
+      legend: {
+        display: false,
       },
-      ticks: {
-        color: '#9ca3af',
-        font: {
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#fff',
+        bodyColor: '#00f0ff',
+        borderColor: 'rgba(0, 240, 255, 0.3)',
+        borderWidth: 1,
+        padding: 10,
+        bodyFont: {
           family: 'monospace'
         },
-        callback: function(value: any) {
-          return value + '%';
+        titleFont: {
+          family: 'monospace'
+        },
+        callbacks: {
+          label: function(context: any) {
+            return `${context.raw}% Spread`;
+          }
         }
-      },
-      border: {
-        display: false
       }
     },
-    x: {
-      grid: {
-        display: false
-      },
-      ticks: {
-        color: '#9ca3af',
-        font: {
-          family: 'monospace'
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        grid: {
+          color: 'rgba(0, 240, 255, 0.1)',
+        },
+        ticks: {
+          color: '#9ca3af',
+          font: {
+            family: 'monospace'
+          },
+          callback: function(value: any) {
+            return value + '%';
+          }
+        },
+        border: {
+          display: false
         }
       },
-      border: {
-        display: true,
-        color: 'rgba(0, 240, 255, 0.2)'
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          color: '#9ca3af',
+          font: {
+            family: 'monospace'
+          }
+        },
+        border: {
+          display: true,
+          color: 'rgba(0, 240, 255, 0.2)'
+        }
       }
     }
-  }
-};
+  };
 
-export default function SpreadTracker() {
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-10">
       <div>

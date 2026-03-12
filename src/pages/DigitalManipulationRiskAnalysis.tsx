@@ -74,7 +74,15 @@ export default function DigitalManipulationRiskAnalysis() {
       setProgress(100);
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        let errorMsg = `Upload failed: ${response.statusText}`;
+        try {
+          const errData = await response.json();
+          if (errData.error) errorMsg = errData.error;
+          if (errData.details) errorMsg += ` - ${errData.details}`;
+        } catch (e) {
+          // Fallback if not JSON
+        }
+        throw new Error(errorMsg);
       }
 
       const data: AnalysisResponse = await response.json();
@@ -86,7 +94,7 @@ export default function DigitalManipulationRiskAnalysis() {
       }, 500);
     } catch (err: any) {
       clearInterval(interval);
-      setError("Analysis failed. Please try again.");
+      setError(err.message || "Analysis failed. Please try again.");
       setIsScanning(false);
       setScanResult('neutral');
     }

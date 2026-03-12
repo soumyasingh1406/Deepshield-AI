@@ -1,3 +1,5 @@
+const eventBus = require("./eventBus");
+
 function startTelemetryFeed(io) {
     console.log("Starting real-time system telemetry feed...");
 
@@ -52,6 +54,23 @@ function startTelemetryFeed(io) {
 
         io.emit("systemTelemetry", telemetryData);
     }, 5000);
+
+    // Listen for high priority intel logs from other services
+    eventBus.on("intelLog", (intelEvent) => {
+        // Broadcast immediately with current stats
+        const telemetryData = {
+            harassmentScanned,
+            incidentsPrevented,
+            protectionStatus: protectionStatus.toFixed(2),
+            evidenceRecords,
+            intelEvent: {
+                time: new Date().toLocaleTimeString('en-US', { hour12: false }),
+                message: intelEvent.msg,
+                severity: intelEvent.severity
+            }
+        };
+        io.emit("systemTelemetry", telemetryData);
+    });
 }
 
 module.exports = startTelemetryFeed;

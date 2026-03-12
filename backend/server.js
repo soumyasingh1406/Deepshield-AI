@@ -6,13 +6,16 @@ const http = require("http");
 const { Server } = require("socket.io");
 const startThreatFeed = require("./services/threatFeed");
 const startTelemetryFeed = require("./services/telemetryFeed");
+const startSpreadTracker = require("./services/spreadTracker");
 
 if (!process.env.GEMINI_API_KEY) {
-    console.error("FATAL ERROR: GEMINI_API_KEY is missing from .env.");
-    process.exit(1);
+    console.error("WARNING: GEMINI_API_KEY is missing from .env. Falling back to heuristic metadata analysis models only.");
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+let genAI = null;
+if (process.env.GEMINI_API_KEY) {
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+}
 
 const analyzeRoute = require("./routes/analyzeMedia");
 const evidenceRoute = require("./routes/evidence");
@@ -47,6 +50,7 @@ app.get("/", (req, res) => {
 
 startThreatFeed(io);
 startTelemetryFeed(io);
+startSpreadTracker(io);
 
 server.listen(5000, () => {
     console.log("Server running on port 5000");
