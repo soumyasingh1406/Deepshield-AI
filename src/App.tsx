@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import LandingPage from './pages/LandingPage';
-import DeepfakeAnalyzer from './pages/DeepfakeAnalyzer';
+import DigitalManipulationRiskAnalysis from './pages/DigitalManipulationRiskAnalysis';
 import EvidenceLocker from './pages/EvidenceLocker';
 import ThreatDashboard from './pages/ThreatDashboard';
 import SpreadTracker from './pages/SpreadTracker';
@@ -14,7 +14,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<LandingPage />} />
-          <Route path="analyzer" element={<DeepfakeAnalyzer />} />
+          <Route path="analyzer" element={<DigitalManipulationRiskAnalysis />} />
           <Route path="evidence" element={<EvidenceLocker />} />
           <Route path="dashboard" element={<ThreatDashboard />} />
           <Route path="spread-tracker" element={<SpreadTracker />} />

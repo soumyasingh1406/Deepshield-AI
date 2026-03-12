@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, FileText, Download, CheckCircle2, ShieldAlert, Shield } from 'lucide-react';
+import { Lock, FileText, Download, CheckCircle2, ShieldAlert, Shield, Loader2 } from 'lucide-react';
 import CryptoJS from 'crypto-js';
 
-const mockEvidence = [
-  { id: 'EV-001', hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', target: 'ceo_statement_fake.mp4', time: '2023-11-14T08:22:10Z', status: 'verified_fake', source: 'Twitter API' },
-  { id: 'EV-002', hash: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', target: 'news_report_alt.jpg', time: '2023-11-14T11:45:00Z', status: 'verified_fake', source: 'Manual Upload' },
-  { id: 'EV-003', hash: '4a6b9a8fcf2b71c2621ad77e77d853b05be5aab34f738f712574fa4507a7e8ea', target: 'political_rally_raw.mp4', time: '2023-11-13T16:10:33Z', status: 'authentic', source: 'News Archiver Node' },
-  { id: 'EV-004', hash: 'c2a6fdf9a37e8c3b1a8d438cf1df8c281df69e9a5840d876bc8b3d875dc9d5e3', target: 'audio_leak_q3.wav', time: '2023-11-13T09:05:12Z', status: 'verified_fake', source: 'Endpoint Agent' },
-  { id: 'EV-005', hash: 'b6589fc6ab0dc82cf12099d1c2d40ab994e8410cce5b5baf00f7e4ac87d8123', target: 'press_briefing.avi', time: '2023-11-12T22:30:00Z', status: 'authentic', source: 'Manual Upload' },
-];
+interface EvidenceRecord {
+  id: string;
+  filename: string;
+  sha256: string;
+  riskLevel: string;
+  timestamp: string;
+  integrityStatus?: 'VERIFIED' | 'HASH MISMATCH';
+}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -27,44 +28,37 @@ const itemVariants = {
 };
 
 export default function EvidenceLocker() {
-  const [evidenceList, setEvidenceList] = useState<any[]>(mockEvidence);
+  const [evidenceList, setEvidenceList] = useState<EvidenceRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const fetchEvidence = () => {
+    setLoading(true);
+    fetch('http://localhost:5000/api/evidence')
+      .then((res) => res.json())
+      .then((data) => {
+        setEvidenceList(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching evidence:', error);
+        setLoading(false);
+      });
+  };
+
   useEffect(() => {
-    const stored = localStorage.getItem('evidence_locker');
-    if (stored) {
-      try {
-        setEvidenceList(JSON.parse(stored));
-      } catch (e) {
-        console.error("Failed to parse evidence_locker from localStorage");
-      }
-    } else {
-      localStorage.setItem('evidence_locker', JSON.stringify(mockEvidence));
-    }
-    
-    // Listen for storage events to update the list if it's changed in another tab or programmatically
-    const handleStorageChange = () => {
-      const updatedStored = localStorage.getItem('evidence_locker');
-      if (updatedStored) {
-        try {
-          setEvidenceList(JSON.parse(updatedStored));
-        } catch (e) {}
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    fetchEvidence();
   }, []);
 
   const handleExportCSV = () => {
-    const headers = ['Evidence ID', 'File Name', 'Source', 'Timestamp', 'SHA-256 Hash', 'Status'];
-    const csvContent = evidenceList.map((item: any) => [
+    const headers = ['Evidence ID', 'File Name', 'SHA-256 Hash', 'Risk Level', 'Timestamp'];
+    const csvContent = evidenceList.map((item) => [
       item.id,
-      `"${item.target}"`,
-      `"${item.source}"`,
-      `"${item.time}"`,
-      item.hash,
-      item.status === 'verified_fake' ? 'Fake' : 'Real'
+      `"${item.filename}"`,
+      item.sha256,
+      item.riskLevel,
+      `"${new Date(item.timestamp).toLocaleString()}"`
     ].join(','));
     
     const csvStr = headers.join(',') + '\n' + csvContent.join('\n');
@@ -101,15 +95,13 @@ export default function EvidenceLocker() {
             if (item.id === verifyingId) {
               return {
                 ...item,
-                integrityStatus: item.hash === generatedHash ? 'VERIFIED' : 'HASH MISMATCH'
+                integrityStatus: (item.sha256 === generatedHash ? 'VERIFIED' : 'HASH MISMATCH') as 'VERIFIED' | 'HASH MISMATCH'
               };
             }
             return item;
           });
 
           setEvidenceList(updatedList);
-          localStorage.setItem('evidence_locker', JSON.stringify(updatedList));
-          window.dispatchEvent(new Event('storage'));
         }
         setVerifyingId(null);
       };
@@ -143,6 +135,12 @@ export default function EvidenceLocker() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button 
+            onClick={fetchEvidence}
+            className="flex items-center gap-2 px-4 py-2 bg-cyber-blue/10 border border-cyber-blue text-cyber-blue hover:bg-cyber-blue/20 rounded-lg transition-all font-mono text-sm"
+          >
+            Refresh records
+          </button>
           <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-black/40 border border-cyber-border text-gray-300 hover:text-white rounded-lg hover:border-cyber-cyan transition-all font-mono text-sm">
             <Download className="w-4 h-4" /> Export Ledger (CSV)
           </button>
@@ -158,7 +156,7 @@ export default function EvidenceLocker() {
                 <th className="p-4 font-medium uppercase tracking-wider hidden md:table-cell">Source</th>
                 <th className="p-4 font-medium uppercase tracking-wider">SHA-256 Cryptographic Hash</th>
                 <th className="p-4 font-medium uppercase tracking-wider">Integrity Status</th>
-                <th className="p-4 font-medium uppercase tracking-wider text-right">Status</th>
+                <th className="p-4 font-medium uppercase tracking-wider text-right">Risk Level</th>
               </tr>
             </thead>
             <motion.tbody
@@ -167,59 +165,78 @@ export default function EvidenceLocker() {
               animate="visible"
               className="divide-y divide-cyber-border text-gray-300"
             >
-              {evidenceList.map((item) => (
-                <motion.tr variants={itemVariants} key={item.id} className="hover:bg-white/5 transition-colors group cursor-pointer">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-4 h-4 text-cyber-blue shrink-0" />
-                      <div>
-                        <div className="font-bold text-white group-hover:text-cyber-blue transition-colors">{item.id}</div>
-                        <div className="text-xs text-gray-500 truncate max-w-[150px] sm:max-w-[200px]">{item.target}</div>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-cyber-blue font-mono">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p>Loading records from secure endpoints...</p>
+                  </td>
+                </tr>
+              ) : evidenceList.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-gray-500 font-mono">
+                    <p>No evidence records found.</p>
+                  </td>
+                </tr>
+              ) : (
+                evidenceList.map((item) => (
+                  <motion.tr variants={itemVariants} key={item.id} className="hover:bg-white/5 transition-colors group cursor-pointer">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-4 h-4 text-cyber-blue shrink-0" />
+                        <div>
+                          <div className="font-bold text-white group-hover:text-cyber-blue transition-colors">
+                            {item.id}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate max-w-[150px] sm:max-w-[200px]">
+                            {item.filename}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="p-4 hidden md:table-cell">
-                    <span className="px-2 py-1 bg-cyber-base rounded text-xs border border-cyber-border">{item.source}</span>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex flex-col gap-1">
-                      <span className="font-mono text-xs text-cyber-cyan truncate max-w-[150px] sm:max-w-xs lg:max-w-md">{item.hash}</span>
-                      <span className="text-[10px] text-gray-500">{new Date(item.time).toLocaleString()}</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    {item.integrityStatus ? (
-                      item.integrityStatus === 'VERIFIED' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-cyber-green/10 text-cyber-green text-xs font-bold border border-cyber-green/30">
-                          <CheckCircle2 className="w-3 h-3" /> VERIFIED
+                    </td>
+                    <td className="p-4 hidden md:table-cell">
+                      <span className="px-2 py-1 bg-cyber-base rounded text-xs border border-cyber-border">System</span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-mono text-xs text-cyber-cyan truncate max-w-[150px] sm:max-w-xs lg:max-w-md">{item.sha256}</span>
+                        <span className="text-[10px] text-gray-500">{new Date(item.timestamp).toLocaleString()}</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      {item.integrityStatus ? (
+                        item.integrityStatus === 'VERIFIED' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-cyber-green/10 text-cyber-green text-xs font-bold border border-cyber-green/30">
+                            <CheckCircle2 className="w-3 h-3" /> VERIFIED
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-cyber-red/10 text-cyber-red text-xs font-bold border border-cyber-red/30">
+                            <ShieldAlert className="w-3 h-3" /> HASH MISMATCH
+                          </span>
+                        )
+                      ) : (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleVerifyClick(item.id); }}
+                          className="flex items-center gap-2 px-3 py-1 bg-cyber-blue/10 border border-cyber-blue/30 text-cyber-blue hover:bg-cyber-blue hover:text-black rounded transition-all font-mono text-xs"
+                        >
+                          <Shield className="w-3 h-3" /> Verify Integrity
+                        </button>
+                      )}
+                    </td>
+                    <td className="p-4 text-right">
+                      {item.riskLevel === 'HIGH' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-cyber-red/10 text-cyber-red text-xs font-bold border border-cyber-red/30">
+                          <ShieldAlert className="w-3 h-3" /> HIGH
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-cyber-red/10 text-cyber-red text-xs font-bold border border-cyber-red/30">
-                          <ShieldAlert className="w-3 h-3" /> HASH MISMATCH
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-cyber-green/10 text-cyber-green text-xs font-bold border border-cyber-green/30">
+                          <CheckCircle2 className="w-3 h-3" /> LOW
                         </span>
-                      )
-                    ) : (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleVerifyClick(item.id); }}
-                        className="flex items-center gap-2 px-3 py-1 bg-cyber-blue/10 border border-cyber-blue/30 text-cyber-blue hover:bg-cyber-blue hover:text-black rounded transition-all font-mono text-xs"
-                      >
-                        <Shield className="w-3 h-3" /> Verify Integrity
-                      </button>
-                    )}
-                  </td>
-                  <td className="p-4 text-right">
-                    {item.status === 'verified_fake' ? (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-cyber-red/10 text-cyber-red text-xs font-bold border border-cyber-red/30">
-                        <ShieldAlert className="w-3 h-3" /> FAKE
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-cyber-green/10 text-cyber-green text-xs font-bold border border-cyber-green/30">
-                        <CheckCircle2 className="w-3 h-3" /> REAL
-                      </span>
-                    )}
-                  </td>
-                </motion.tr>
-              ))}
+                      )}
+                    </td>
+                  </motion.tr>
+                ))
+              )}
             </motion.tbody>
           </table>
         </div>
