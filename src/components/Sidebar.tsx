@@ -47,10 +47,9 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, se
                 to={item.path}
                 onClick={() => setMobileOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 group ${
-                    isActive 
-                      ? 'bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/30 shadow-[0_0_15px_rgba(0,240,255,0.15)]' 
-                      : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 group ${isActive
+                    ? 'bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/30 shadow-[0_0_15px_rgba(0,240,255,0.15)]'
+                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
                   }`
                 }
               >

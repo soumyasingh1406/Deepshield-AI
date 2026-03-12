@@ -50,12 +50,11 @@ export default function LandingPage() {
     { label: 'Protection System Status', value: `${protectionStatus}%`, icon: Activity, color: Number(protectionStatus) > 99 ? 'text-cyber-green' : 'text-yellow-500', bg: 'bg-cyber-green/10', border: 'border-cyber-green/30' },
     { label: 'Secured Evidence Records', value: evidenceRecords.toLocaleString(), icon: Lock, color: 'text-cyber-cyan', bg: 'bg-cyber-cyan/10', border: 'border-cyber-cyan/30' }
   ];
-
   return (
     <div className="flex flex-col gap-8 max-w-7xl mx-auto pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center gap-2 mb-2"
@@ -63,7 +62,7 @@ export default function LandingPage() {
             <div className="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></div>
             <span className="text-cyber-green font-mono text-sm tracking-widest">SYSTEM ONLINE</span>
           </motion.div>
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
@@ -71,7 +70,7 @@ export default function LandingPage() {
           >
             COMMAND <span className="text-gradient">CENTER</span>
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
@@ -88,8 +87,8 @@ export default function LandingPage() {
             Technology for safer online spaces.
           </motion.p>
         </div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
@@ -123,87 +122,87 @@ export default function LandingPage() {
                   <Icon className="w-6 h-6" />
                 </div>
               </div>
-            </motion.div>
+            </motion.div >
           );
-        })}
-      </div>
+})}
+      </div >
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main action area */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.7 }}
-          className="lg:col-span-2 glass-panel p-8 border-cyber-cyan/30 relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-cyber-cyan/5 to-transparent"></div>
-          
-          <div className="relative z-10 flex flex-col h-full justify-between gap-6">
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {/* Main action area */}
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.7 }}
+      className="lg:col-span-2 glass-panel p-8 border-cyber-cyan/30 relative overflow-hidden"
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-cyber-cyan/5 to-transparent"></div>
+
+      <div className="relative z-10 flex flex-col h-full justify-between gap-6">
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <ShieldCheck className="w-8 h-8 text-cyber-cyan" />
+            <h2 className="text-2xl font-bold text-white">Advanced Defense Protocol</h2>
+          </div>
+          <p className="text-gray-300 max-w-2xl leading-relaxed">
+            Our neural network array is actively monitoring for synthetic media and deepfake signatures. Upload suspicious media to the analyzer to verify authenticity and log findings in the immutable evidence locker.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <Link to="/analyzer" className="group p-4 rounded-xl bg-black/40 border border-cyber-border hover:border-cyber-cyan/50 transition-all flex items-start gap-4">
+            <div className="p-2 rounded-lg bg-cyber-cyan/10 text-cyber-cyan">
+              <ScanLine className="w-5 h-5" />
+            </div>
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <ShieldCheck className="w-8 h-8 text-cyber-cyan" />
-                <h2 className="text-2xl font-bold text-white">Advanced Defense Protocol</h2>
-              </div>
-              <p className="text-gray-300 max-w-2xl leading-relaxed">
-                Our neural network array is actively monitoring for synthetic media and deepfake signatures. Upload suspicious media to the analyzer to verify authenticity and log findings in the immutable evidence locker.
-              </p>
+              <h4 className="text-white font-medium group-hover:text-cyber-cyan transition-colors">Analyzer Engine</h4>
+              <p className="text-sm text-gray-500 mt-1">Detect synthetic manipulation in video and audio.</p>
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <Link to="/analyzer" className="group p-4 rounded-xl bg-black/40 border border-cyber-border hover:border-cyber-cyan/50 transition-all flex items-start gap-4">
-                <div className="p-2 rounded-lg bg-cyber-cyan/10 text-cyber-cyan">
-                  <ScanLine className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-white font-medium group-hover:text-cyber-cyan transition-colors">Analyzer Engine</h4>
-                  <p className="text-sm text-gray-500 mt-1">Detect synthetic manipulation in video and audio.</p>
-                </div>
-              </Link>
-              
-              <Link to="/response" className="group p-4 rounded-xl bg-black/40 border border-cyber-border hover:border-cyber-blue/50 transition-all flex items-start gap-4">
-                <div className="p-2 rounded-lg bg-cyber-blue/10 text-cyber-blue">
-                  <Zap className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-white font-medium group-hover:text-cyber-blue transition-colors">Rapid Response</h4>
-                  <p className="text-sm text-gray-500 mt-1">Execute takedown procedures for detected threats.</p>
-                </div>
-              </Link>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Recent Activity Status */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.8 }}
-          className="glass-panel p-6 flex flex-col"
-        >
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-cyber-blue" />
-            Live Intel Feed
-          </h3>
-          
-          <div className="flex-1 space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-            {intelLogs.map((log, i) => (
-              <div key={i} className="flex gap-3 text-sm border-b border-cyber-border/30 pb-2">
-                <span className="text-gray-500 font-mono shrink-0">{log.time}</span>
-                <span className={`${
-                  log.severity === 'HIGH' ? 'text-cyber-red font-bold animate-pulse' : 
-                  log.severity === 'MEDIUM' ? 'text-yellow-500 font-medium' : 'text-cyber-green'
-                }`}>
-                  {log.message}
-                </span>
-              </div>
-            ))}
-          </div>
-          
-          <Link to="/dashboard" className="mt-6 flex items-center justify-center gap-2 w-full text-sm text-cyber-blue hover:text-cyber-cyan transition-colors py-2 border border-transparent hover:border-cyber-blue/30 rounded-lg">
-            View All Logs <ArrowRight className="w-4 h-4" />
           </Link>
-        </motion.div>
+
+          <Link to="/response" className="group p-4 rounded-xl bg-black/40 border border-cyber-border hover:border-cyber-blue/50 transition-all flex items-start gap-4">
+            <div className="p-2 rounded-lg bg-cyber-blue/10 text-cyber-blue">
+              <Zap className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-white font-medium group-hover:text-cyber-blue transition-colors">Rapid Response</h4>
+              <p className="text-sm text-gray-500 mt-1">Execute takedown procedures for detected threats.</p>
+            </div>
+          </Link>
+        </div>
       </div>
+    </motion.div>
+
+    {/* Recent Activity Status */}
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.8 }}
+      className="glass-panel p-6 flex flex-col"
+    >
+      <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <Activity className="w-5 h-5 text-cyber-blue" />
+        Live Intel Feed
+      </h3>
+
+      <div className="flex-1 space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+        {intelLogs.map((log, i) => (
+          <div key={i} className="flex gap-3 text-sm border-b border-cyber-border/30 pb-2">
+            <span className="text-gray-500 font-mono shrink-0">{log.time}</span>
+            <span className={`${
+              log.severity === 'HIGH' ? 'text-cyber-red font-bold animate-pulse' :
+              log.severity === 'MEDIUM' ? 'text-yellow-500 font-medium' : 'text-cyber-green'
+            }`}>
+              {log.message}
+            </span>
+          </div>
+        ))}
+      </div>
+
+        <Link to="/dashboard" className="mt-6 flex items-center justify-center gap-2 w-full text-sm text-cyber-blue hover:text-cyber-cyan transition-colors py-2 border border-transparent hover:border-cyber-blue/30 rounded-lg">
+          View All Logs <ArrowRight className="w-4 h-4" />
+        </Link>
+      </motion.div>
+    </div>
     </div>
   );
 }
