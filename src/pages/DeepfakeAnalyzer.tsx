@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UploadCloud, ScanLine, ShieldCheck, FileType, ZoomIn, ShieldX, Database } from 'lucide-react';
+import CryptoJS from 'crypto-js';
 
 export default function DeepfakeAnalyzer() {
   const [file, setFile] = useState<File | null>(null);
@@ -41,7 +42,40 @@ export default function DeepfakeAnalyzer() {
         setTimeout(() => {
           setIsScanning(false);
           // Mock logic: randomly decide if real or fake
-          setScanResult(Math.random() > 0.5 ? 'fake' : 'real');
+          const statusResult = Math.random() > 0.5 ? 'fake' : 'real';
+          setScanResult(statusResult);
+
+          // Generate hash and store in Evidence Locker
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const fileData = e.target?.result;
+            if (typeof fileData === 'string') {
+              const hash = CryptoJS.SHA256(CryptoJS.enc.Latin1.parse(fileData)).toString(CryptoJS.enc.Hex);
+              
+              const record = {
+                id: `EV-${Math.floor(1000 + Math.random() * 9000).toString()}`,
+                hash: hash,
+                target: file.name,
+                time: new Date().toISOString(),
+                status: statusResult === 'fake' ? 'verified_fake' : 'authentic',
+                source: 'Manual Upload'
+              };
+
+              const stored = localStorage.getItem('evidence_locker');
+              let evidenceList = [];
+              if (stored) {
+                try {
+                  evidenceList = JSON.parse(stored);
+                } catch (err) {}
+              }
+              evidenceList.unshift(record);
+              localStorage.setItem('evidence_locker', JSON.stringify(evidenceList));
+              
+              // Dispatch storage event to update other tabs/components listening
+              window.dispatchEvent(new Event('storage'));
+            }
+          };
+          reader.readAsBinaryString(file);
         }, 500);
       }
       setProgress(Math.min(currentProgress, 100));

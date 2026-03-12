@@ -1,13 +1,15 @@
 import { NavLink } from 'react-router-dom';
-import { Shield, Activity, Lock, AlertTriangle, Terminal, X, Hexagon } from 'lucide-react';
+import { Shield, Activity, Lock, AlertTriangle, Terminal, X, Hexagon, HeartHandshake, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navItems = [
   { path: '/', label: 'Command Center', icon: Activity },
   { path: '/analyzer', label: 'Deepfake Analyzer', icon: Scan },
-  { path: '/locker', label: 'Evidence Locker', icon: Lock },
+  { path: '/evidence', label: 'Evidence Locker', icon: Lock },
   { path: '/dashboard', label: 'Threat Intelligence', icon: Hexagon },
+  { path: '/spread-tracker', label: 'Media Spread Tracker', icon: BarChart3 },
   { path: '/response', label: 'Response Toolkit', icon: AlertTriangle },
+  { path: '/support', label: 'Emergency Support', icon: HeartHandshake },
 ];
 
 export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMobileOpen: (v: boolean) => void }) {

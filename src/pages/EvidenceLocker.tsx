@@ -1,5 +1,7 @@
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, FileText, Download, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Lock, FileText, Download, CheckCircle2, ShieldAlert, Shield } from 'lucide-react';
+import CryptoJS from 'crypto-js';
 
 const mockEvidence = [
   { id: 'EV-001', hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', target: 'ceo_statement_fake.mp4', time: '2023-11-14T08:22:10Z', status: 'verified_fake', source: 'Twitter API' },
@@ -25,8 +27,107 @@ const itemVariants = {
 };
 
 export default function EvidenceLocker() {
+  const [evidenceList, setEvidenceList] = useState<any[]>(mockEvidence);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('evidence_locker');
+    if (stored) {
+      try {
+        setEvidenceList(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse evidence_locker from localStorage");
+      }
+    } else {
+      localStorage.setItem('evidence_locker', JSON.stringify(mockEvidence));
+    }
+    
+    // Listen for storage events to update the list if it's changed in another tab or programmatically
+    const handleStorageChange = () => {
+      const updatedStored = localStorage.getItem('evidence_locker');
+      if (updatedStored) {
+        try {
+          setEvidenceList(JSON.parse(updatedStored));
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const handleExportCSV = () => {
+    const headers = ['Evidence ID', 'File Name', 'Source', 'Timestamp', 'SHA-256 Hash', 'Status'];
+    const csvContent = evidenceList.map((item: any) => [
+      item.id,
+      `"${item.target}"`,
+      `"${item.source}"`,
+      `"${item.time}"`,
+      item.hash,
+      item.status === 'verified_fake' ? 'Fake' : 'Real'
+    ].join(','));
+    
+    const csvStr = headers.join(',') + '\n' + csvContent.join('\n');
+    const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'evidence_ledger.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleVerifyClick = (id: string) => {
+    setVerifyingId(id);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileVerify = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0] && verifyingId) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = (event) => {
+        const fileData = event.target?.result;
+        if (typeof fileData === 'string') {
+          const generatedHash = CryptoJS.SHA256(CryptoJS.enc.Latin1.parse(fileData)).toString(CryptoJS.enc.Hex);
+          
+          const updatedList = evidenceList.map(item => {
+            if (item.id === verifyingId) {
+              return {
+                ...item,
+                integrityStatus: item.hash === generatedHash ? 'VERIFIED' : 'HASH MISMATCH'
+              };
+            }
+            return item;
+          });
+
+          setEvidenceList(updatedList);
+          localStorage.setItem('evidence_locker', JSON.stringify(updatedList));
+          window.dispatchEvent(new Event('storage'));
+        }
+        setVerifyingId(null);
+      };
+
+      reader.readAsBinaryString(file);
+    } else {
+      setVerifyingId(null);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto pb-10">
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileVerify} 
+        className="hidden" 
+      />
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-mono font-bold text-white flex items-center gap-3">
@@ -42,7 +143,7 @@ export default function EvidenceLocker() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-black/40 border border-cyber-border text-gray-300 hover:text-white rounded-lg hover:border-cyber-cyan transition-all font-mono text-sm">
+          <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-black/40 border border-cyber-border text-gray-300 hover:text-white rounded-lg hover:border-cyber-cyan transition-all font-mono text-sm">
             <Download className="w-4 h-4" /> Export Ledger (CSV)
           </button>
         </div>
@@ -56,6 +157,7 @@ export default function EvidenceLocker() {
                 <th className="p-4 font-medium uppercase tracking-wider">ID / Target File</th>
                 <th className="p-4 font-medium uppercase tracking-wider hidden md:table-cell">Source</th>
                 <th className="p-4 font-medium uppercase tracking-wider">SHA-256 Cryptographic Hash</th>
+                <th className="p-4 font-medium uppercase tracking-wider">Integrity Status</th>
                 <th className="p-4 font-medium uppercase tracking-wider text-right">Status</th>
               </tr>
             </thead>
@@ -65,7 +167,7 @@ export default function EvidenceLocker() {
               animate="visible"
               className="divide-y divide-cyber-border text-gray-300"
             >
-              {mockEvidence.map((item) => (
+              {evidenceList.map((item) => (
                 <motion.tr variants={itemVariants} key={item.id} className="hover:bg-white/5 transition-colors group cursor-pointer">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
@@ -84,6 +186,26 @@ export default function EvidenceLocker() {
                       <span className="font-mono text-xs text-cyber-cyan truncate max-w-[150px] sm:max-w-xs lg:max-w-md">{item.hash}</span>
                       <span className="text-[10px] text-gray-500">{new Date(item.time).toLocaleString()}</span>
                     </div>
+                  </td>
+                  <td className="p-4">
+                    {item.integrityStatus ? (
+                      item.integrityStatus === 'VERIFIED' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-cyber-green/10 text-cyber-green text-xs font-bold border border-cyber-green/30">
+                          <CheckCircle2 className="w-3 h-3" /> VERIFIED
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-cyber-red/10 text-cyber-red text-xs font-bold border border-cyber-red/30">
+                          <ShieldAlert className="w-3 h-3" /> HASH MISMATCH
+                        </span>
+                      )
+                    ) : (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleVerifyClick(item.id); }}
+                        className="flex items-center gap-2 px-3 py-1 bg-cyber-blue/10 border border-cyber-blue/30 text-cyber-blue hover:bg-cyber-blue hover:text-black rounded transition-all font-mono text-xs"
+                      >
+                        <Shield className="w-3 h-3" /> Verify Integrity
+                      </button>
+                    )}
                   </td>
                   <td className="p-4 text-right">
                     {item.status === 'verified_fake' ? (
