@@ -2,7 +2,6 @@
   "name": "deepshield-ai",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "dev": "concurrently \"vite\" \"node backend/server.js\"",
     "build": "tsc -b && vite build",
