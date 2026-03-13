@@ -93,5 +93,5 @@ eventBus.on("tamperDetected", () => {
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
-    console.log(`🚀 DeepShield backend running on port ${PORT}`);
+    console.log(`DeepShield backend running on port ${PORT}`);
 });
