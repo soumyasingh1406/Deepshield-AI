@@ -18,7 +18,6 @@ export default function DigitalManipulationRiskAnalysis() {
   const [progress, setProgress] = useState(0);
   const [analysisResponse, setAnalysisResponse] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [hasSavedEvidence, setHasSavedEvidence] = useState(false);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -41,7 +40,6 @@ export default function DigitalManipulationRiskAnalysis() {
     setProgress(0);
     setAnalysisResponse(null);
     setError(null);
-    setHasSavedEvidence(false);
   };
 
   useEffect(() => {
@@ -56,7 +54,7 @@ export default function DigitalManipulationRiskAnalysis() {
     setProgress(10);
     setError(null);
     setAnalysisResponse(null);
-    
+
     const interval = setInterval(() => {
       setProgress((prev) => Math.min(prev + 10, 90));
     }, 500);
@@ -69,7 +67,7 @@ export default function DigitalManipulationRiskAnalysis() {
         method: "POST",
         body: formData,
       });
-      
+
       clearInterval(interval);
       setProgress(100);
 
@@ -87,7 +85,7 @@ export default function DigitalManipulationRiskAnalysis() {
 
       const data: AnalysisResponse = await response.json();
       setAnalysisResponse(data);
-      
+
       setTimeout(() => {
         setIsScanning(false);
         setScanResult(data.riskLevel === 'HIGH' ? 'fake' : data.riskLevel === 'MEDIUM' ? 'warning' : 'real');
@@ -100,32 +98,10 @@ export default function DigitalManipulationRiskAnalysis() {
     }
   };
 
-  const saveToEvidence = async () => {
-    if (!analysisResponse) return;
-    
-    try {
-      const response = await fetch("http://localhost:5000/api/evidence", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          filename: analysisResponse.filename,
-          sha256: analysisResponse.sha256,
-          riskLevel: analysisResponse.riskLevel,
-          timestamp: new Date().toISOString()
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save evidence");
-      }
-
-      setHasSavedEvidence(true);
-    } catch (err) {
-      console.error(err);
-      setError("ERROR: Failed to save to evidence locker.");
-    }
+  const navigateToEvidence = () => {
+    // Basic navigation or trigger root app state change
+    // Using vanilla browser router approach matching Vite
+    window.location.href = '/';
   };
 
   return (
@@ -141,24 +117,24 @@ export default function DigitalManipulationRiskAnalysis() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upload & Preview Section */}
         <div className="flex flex-col gap-4">
-          <div 
+          <div
             className={`glass-panel border-2 border-dashed ${file ? 'border-cyber-blue/50' : 'border-cyber-border hover:border-cyber-cyan/30'} p-8 rounded-xl flex flex-col items-center justify-center text-center transition-all cursor-pointer relative overflow-hidden group min-h-[300px]`}
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
           >
-            <input 
-              type="file" 
+            <input
+              type="file"
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
               onChange={handleFileInput}
               accept="image/*,video/*,audio/*"
             />
-            
+
             {file && !isScanning && scanResult === 'neutral' ? (
               <div className="flex flex-col items-center z-10">
                 <FileType className="w-16 h-16 text-cyber-blue mb-4" />
                 <p className="text-white font-mono">{file.name}</p>
                 <p className="text-sm text-gray-500 mt-2">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                <button 
+                <button
                   onClick={(e) => { e.preventDefault(); startScan(); }}
                   className="mt-6 px-6 py-2 bg-cyber-blue text-black font-bold rounded-lg hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all flex items-center gap-2 relative z-30 pointer-events-auto"
                 >
@@ -170,11 +146,11 @@ export default function DigitalManipulationRiskAnalysis() {
                 <div className="relative w-48 h-48 rounded-lg overflow-hidden border border-cyber-border mb-4 bg-black">
                   {/* Mock preview generic image */}
                   <div className="absolute inset-0 bg-cyber-base flex items-center justify-center pointer-events-none">
-                     <span className="font-mono text-cyber-blue opacity-50">TARGET ACQUIRED</span>
+                    <span className="font-mono text-cyber-blue opacity-50">TARGET ACQUIRED</span>
                   </div>
-                  
+
                   {isScanning && (
-                    <motion.div 
+                    <motion.div
                       className="absolute left-0 right-0 h-1 bg-cyber-cyan shadow-[0_0_15px_rgba(0,255,255,1)] z-10 pointer-events-none"
                       animate={{ top: ['0%', '100%', '0%'] }}
                       transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
@@ -194,13 +170,13 @@ export default function DigitalManipulationRiskAnalysis() {
                 <p className="text-sm text-gray-500 mt-2">or click to browse local filesystem</p>
               </div>
             )}
-            
+
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black z-0"></div>
           </div>
 
           <AnimatePresence>
             {isScanning && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
@@ -211,7 +187,7 @@ export default function DigitalManipulationRiskAnalysis() {
                   <span className="text-white">{Math.floor(progress)}%</span>
                 </div>
                 <div className="w-full h-2 bg-cyber-border rounded-full overflow-hidden">
-                  <motion.div 
+                  <motion.div
                     className="h-full bg-cyber-cyan shadow-[0_0_10px_rgba(0,255,255,0.8)]"
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
@@ -247,7 +223,7 @@ export default function DigitalManipulationRiskAnalysis() {
                 {progress > 80 && <p className="text-cyber-blue">&gt; Finalizing risk level assessment...</p>}
               </div>
             ) : analysisResponse ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex-1 flex flex-col"
@@ -306,20 +282,11 @@ export default function DigitalManipulationRiskAnalysis() {
                 </div>
 
                 <div className="mt-auto pt-6 border-t border-cyber-border">
-                  <button 
-                    onClick={saveToEvidence}
-                    disabled={hasSavedEvidence}
-                    className={`w-full py-2 bg-transparent border ${hasSavedEvidence ? 'border-cyber-green text-cyber-green/50 cursor-not-allowed' : 'border-cyber-border text-gray-300 hover:text-white hover:border-cyber-cyan/50'} rounded-lg transition-all text-sm font-mono flex items-center justify-center gap-2`}
+                  <button
+                    onClick={navigateToEvidence}
+                    className="w-full py-2 bg-transparent border border-cyber-border text-gray-300 hover:text-white hover:border-cyber-cyan/50 rounded-lg transition-all text-sm font-mono flex items-center justify-center gap-2"
                   >
-                    {hasSavedEvidence ? (
-                      <>
-                        <ShieldCheck className="w-4 h-4" /> Evidence stored securely.
-                      </>
-                    ) : (
-                      <>
-                        <Database className="w-4 h-4" /> Send Hash to Evidence Locker
-                      </>
-                    )}
+                    <Database className="w-4 h-4" /> View in Evidence Locker
                   </button>
                 </div>
               </motion.div>

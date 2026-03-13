@@ -12,6 +12,17 @@ const eventBus = require("../services/eventBus");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+function calculateHash(filePath) {
+    return new Promise((resolve, reject) => {
+        const hash = crypto.createHash("sha256");
+        const stream = fs.createReadStream(filePath);
+
+        stream.on("data", data => hash.update(data));
+        stream.on("end", () => resolve(hash.digest("hex")));
+        stream.on("error", reject);
+    });
+}
+
 const uploadDir = path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -35,11 +46,10 @@ router.post("/", upload.single("file"), async (req, res) => {
 
     try {
         const filePath = req.file.path;
-        const buffer = await fs.promises.readFile(filePath);
+        const sha256 = await calculateHash(filePath);
         
-        const hash = crypto.createHash("sha256");
-        hash.update(buffer);
-        const sha256 = hash.digest("hex");
+        // Load buffer independently for metadata & sharp ingestion
+        const buffer = await fs.promises.readFile(filePath);
         
         let riskScore = 0;
         let indicators = [];
@@ -192,7 +202,23 @@ router.post("/", upload.single("file"), async (req, res) => {
             eventBus.emit("suspiciousMedia", { filename: filenameLabel, riskLevel });
         }
 
+        const evidenceStore = require("../database/evidenceStore");
+
+        const evidence = {
+            id: Date.now().toString(),
+            filename: req.file.filename,
+            filepath: req.file.path,
+            sha256,
+            timestamp: new Date().toISOString(),
+            riskLevel,
+            status: "UNVERIFIED"
+        };
+        
+        evidenceStore.push(evidence);
+
         res.json({
+            success: true,
+            evidence,
             filename: req.file.filename,
             sha256,
             riskLevel,

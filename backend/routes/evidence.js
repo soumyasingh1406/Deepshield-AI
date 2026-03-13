@@ -1,29 +1,38 @@
 const express = require("express");
 const router = express.Router();
-const { getEvidence, addEvidence } = require("../controllers/evidenceController");
+const evidenceStore = require("../database/evidenceStore");
 
-router.get("/", getEvidence);
+router.get("/", (req, res) => {
+    res.json(evidenceStore);
+});
 
-router.post("/", (req, res) => {
-    const { filename, sha256, riskLevel, timestamp } = req.body;
+router.get("/verify/:id", (req, res) => {
+    const evidence = evidenceStore.find(e => e.id == req.params.id);
 
-    if (!filename || !sha256 || !riskLevel || !timestamp) {
-        return res.status(400).json({ error: "Missing required evidence fields" });
+    if (!evidence) {
+        return res.json({ result: "NOT_FOUND" });
     }
 
-    const record = {
-        filename,
-        sha256,
-        riskLevel,
-        timestamp
-    };
+    const fs = require("fs");
+    const crypto = require("crypto");
 
-    addEvidence(record);
+    try {
+        const fileBuffer = fs.readFileSync(evidence.filepath);
 
-    res.status(201).json({ 
-        success: true, 
-        message: "Evidence stored successfully" 
-    });
+        const newHash = crypto
+            .createHash("sha256")
+            .update(fileBuffer)
+            .digest("hex");
+
+        if (newHash === evidence.sha256) {
+             return res.json({ result: "VERIFIED" });
+        } else {
+             return res.json({ result: "TAMPERED" });
+        }
+
+    } catch (err) {
+        return res.json({ result: "TAMPERED" });
+    }
 });
 
 module.exports = router;

@@ -33,7 +33,10 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/analyze", analyzeRoute);
+
+app.use("/api/evidence/verify-ledger", require("./routes/verifyLedger"));
 app.use("/api/evidence", evidenceRoute);
+
 app.use("/api/dashboard", dashboardRoute);
 app.use("/api/threats", threatsRoute);
 app.use("/api/analyze-message", analyzeMessageRoute);
@@ -48,9 +51,18 @@ app.get("/", (req, res) => {
     res.send("DeepShield AI backend running");
 });
 
+const eventBus = require("./services/eventBus");
+
 startThreatFeed(io);
 startTelemetryFeed(io);
 startSpreadTracker(io);
+
+eventBus.on("tamperDetected", () => {
+    io.emit("systemTelemetry", {
+        type: "evidence_tamper_detected",
+        timestamp: new Date().toISOString()
+    });
+});
 
 server.listen(5000, () => {
     console.log("Server running on port 5000");
